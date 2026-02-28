@@ -3,9 +3,9 @@ package com.cqjtjc.system.controller;
 import com.cqjtjc.common.result.R;
 import com.cqjtjc.common.validation.AddGroup;
 import com.cqjtjc.common.validation.UpdateGroup;
-import com.cqjtjc.system.domain.dto.SysMenuDTO;
-import com.cqjtjc.system.domain.entity.SysMenu;
-import com.cqjtjc.system.domain.vo.MenuTreeVO;
+import com.cqjtjc.system.dto.SysMenuDTO;
+import com.cqjtjc.system.entity.SysMenu;
+import com.cqjtjc.system.vo.MenuTreeVO;
 import com.cqjtjc.system.service.SysMenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +26,7 @@ public class SysMenuController {
 
     @Operation(summary = "查询菜单树")
     @GetMapping("/tree")
+    @PreAuthorize("hasAuthority('system:menu:query')")
     public R<List<MenuTreeVO>> tree() {
         return R.ok(menuService.getMenuTree());
     }
@@ -46,6 +47,7 @@ public class SysMenuController {
 
     @Operation(summary = "根据角色ID查询菜单ID列表")
     @GetMapping("/role/{roleId}")
+    @PreAuthorize("hasAuthority('system:menu:query')")
     public R<List<Long>> getMenuIdsByRoleId(@PathVariable Long roleId) {
         return R.ok(menuService.getMenuIdsByRoleId(roleId));
     }

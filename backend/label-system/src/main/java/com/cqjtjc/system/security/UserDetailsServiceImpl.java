@@ -1,6 +1,6 @@
 package com.cqjtjc.system.security;
 
-import com.cqjtjc.system.domain.entity.SysUser;
+import com.cqjtjc.system.entity.SysUser;
 import com.cqjtjc.system.mapper.SysMenuMapper;
 import com.cqjtjc.system.mapper.SysUserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;

@@ -2,8 +2,8 @@ package com.cqjtjc.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.cqjtjc.system.domain.dto.SysUserDTO;
-import com.cqjtjc.system.domain.entity.SysUser;
+import com.cqjtjc.system.dto.SysUserDTO;
+import com.cqjtjc.system.entity.SysUser;
 
 public interface SysUserService extends IService<SysUser> {
 

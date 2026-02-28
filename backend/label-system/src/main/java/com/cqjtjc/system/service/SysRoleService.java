@@ -2,8 +2,8 @@ package com.cqjtjc.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.cqjtjc.system.domain.dto.SysRoleDTO;
-import com.cqjtjc.system.domain.entity.SysRole;
+import com.cqjtjc.system.dto.SysRoleDTO;
+import com.cqjtjc.system.entity.SysRole;
 
 import java.util.List;
 

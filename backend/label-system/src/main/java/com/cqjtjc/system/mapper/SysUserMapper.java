@@ -1,7 +1,7 @@
 package com.cqjtjc.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.cqjtjc.system.domain.entity.SysUser;
+import com.cqjtjc.system.entity.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

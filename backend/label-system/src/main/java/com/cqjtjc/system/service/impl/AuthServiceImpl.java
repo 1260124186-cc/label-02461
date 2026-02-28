@@ -2,15 +2,16 @@ package com.cqjtjc.system.service.impl;
 
 import com.cqjtjc.common.exception.BusinessException;
 import com.cqjtjc.common.utils.JwtUtils;
-import com.cqjtjc.system.domain.dto.LoginDTO;
-import com.cqjtjc.system.domain.entity.SysRole;
-import com.cqjtjc.system.domain.entity.SysUser;
-import com.cqjtjc.system.domain.vo.LoginVO;
+import com.cqjtjc.system.dto.LoginDTO;
+import com.cqjtjc.system.entity.SysRole;
+import com.cqjtjc.system.entity.SysUser;
+import com.cqjtjc.system.vo.LoginVO;
 import com.cqjtjc.system.service.AuthService;
 import com.cqjtjc.system.service.SysMenuService;
 import com.cqjtjc.system.service.SysRoleService;
 import com.cqjtjc.system.service.SysUserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -58,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
         LoginVO loginVO = new LoginVO();
         loginVO.setToken(token);
         loginVO.setUserInfo(buildUserInfo(user));
+        log.info("用户登录成功, username={}, userId={}", user.getUsername(), user.getId());
         return loginVO;
     }
 
@@ -72,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
+        log.debug("获取当前用户信息, username={}", username);
         return buildUserInfo(user);
     }
 

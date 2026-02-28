@@ -4,21 +4,22 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cqjtjc.common.exception.BusinessException;
-import com.cqjtjc.system.domain.dto.SysRoleDTO;
-import com.cqjtjc.system.domain.entity.SysRole;
-import com.cqjtjc.system.domain.entity.SysRoleMenu;
+import com.cqjtjc.system.dto.SysRoleDTO;
+import com.cqjtjc.system.entity.SysRole;
+import com.cqjtjc.system.entity.SysRoleMenu;
 import com.cqjtjc.system.mapper.SysRoleMapper;
 import com.cqjtjc.system.mapper.SysRoleMenuMapper;
 import com.cqjtjc.system.service.SysRoleService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> implements SysRoleService {
@@ -54,23 +55,12 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
         role.setSort(dto.getSort() != null ? dto.getSort() : 0);
         role.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
         role.setRemark(dto.getRemark());
-        LocalDateTime now = LocalDateTime.now();
-        role.setCreateTime(now);
-        role.setUpdateTime(now);
-        role.setDeleted(0);
         this.save(role);
 
         Long roleId = role.getId();
-        if (roleId == null) {
-            SysRole saved = this.getOne(new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleKey, dto.getRoleKey()).last("LIMIT 1"));
-            if (saved != null) {
-                roleId = saved.getId();
-            }
-        }
-        if (roleId != null) {
-            saveRoleMenus(roleId, dto.getMenuIds());
-        }
-        return roleId != null ? roleId : role.getId();
+        saveRoleMenus(roleId, dto.getMenuIds());
+        log.info("新增角色成功, roleKey={}, roleId={}", dto.getRoleKey(), roleId);
+        return roleId;
     }
 
     @Override
@@ -90,6 +80,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
 
         roleMenuMapper.deleteByRoleId(role.getId());
         saveRoleMenus(role.getId(), dto.getMenuIds());
+        log.info("修改角色成功, roleId={}, roleKey={}", role.getId(), role.getRoleKey());
     }
 
     @Override
@@ -97,6 +88,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     public void deleteRole(Long id) {
         this.removeById(id);
         roleMenuMapper.deleteByRoleId(id);
+        log.info("删除角色成功, roleId={}", id);
     }
 
     private void saveRoleMenus(Long roleId, List<Long> menuIds) {

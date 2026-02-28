@@ -5,8 +5,8 @@ import com.cqjtjc.common.result.PageResult;
 import com.cqjtjc.common.result.R;
 import com.cqjtjc.common.validation.AddGroup;
 import com.cqjtjc.common.validation.UpdateGroup;
-import com.cqjtjc.system.domain.dto.SysRoleDTO;
-import com.cqjtjc.system.domain.entity.SysRole;
+import com.cqjtjc.system.dto.SysRoleDTO;
+import com.cqjtjc.system.entity.SysRole;
 import com.cqjtjc.system.service.SysRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +39,7 @@ public class SysRoleController {
 
     @Operation(summary = "查询所有角色")
     @GetMapping("/list")
+    @PreAuthorize("hasAuthority('system:role:query')")
     public R<List<SysRole>> list() {
         return R.ok(roleService.list());
     }

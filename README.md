@@ -64,6 +64,8 @@ docker-compose down -v
 
 ### 项目结构
 
+项目采用三层架构：**Controller（接口层）→ Service（业务层）→ Mapper（数据访问层）**；`entity`、`dto`、`vo` 直接位于 system 包下，分别承载持久化实体、请求入参与响应出参，与源码包结构一致。
+
 ```
 ├── .gitignore
 ├── README.md
@@ -85,12 +87,22 @@ docker-compose down -v
     │       └── validation/          # AddGroup、UpdateGroup
     ├── label-system/                # 系统模块（RBAC）
     │   ├── pom.xml
-    │   └── src/main/java/com/cqjtjc/system/
-    │       ├── controller/          # Auth、SysUser、SysRole、SysMenu
-    │       ├── domain/              # entity、dto、vo
-    │       ├── mapper/              # MyBatis Mapper
-    │       ├── security/            # JWT 过滤、Security 配置
-    │       └── service/             # 业务接口与实现
+    │   └── src/main/
+    │       ├── java/com/cqjtjc/system/
+    │       │   ├── controller/      # Auth、SysUser、SysRole、SysMenu
+    │       │   ├── entity/          # 持久化实体（SysUser、SysRole、SysMenu、SysUserRole、SysRoleMenu）
+    │       │   ├── dto/             # 请求/入参（LoginDTO、SysUserDTO、SysRoleDTO、SysMenuDTO）
+    │       │   ├── vo/              # 响应/视图（LoginVO、MenuTreeVO）
+    │       │   ├── mapper/          # MyBatis Mapper 接口
+    │       │   ├── security/        # JWT 过滤、Security 配置
+    │       │   └── service/         # 业务接口与实现
+    │       └── resources/
+    │           └── mapper/          # Mapper XML，自定义 SQL 统一在此（mapper-locations 扫描）
+    │               ├── SysUserMapper.xml
+    │               ├── SysRoleMapper.xml
+    │               ├── SysMenuMapper.xml
+    │               ├── SysUserRoleMapper.xml
+    │               └── SysRoleMenuMapper.xml
     └── label-admin/                 # 启动模块
         ├── pom.xml
         └── src/main/
@@ -107,25 +119,59 @@ docker-compose down -v
 - 菜单类型：M(目录) / C(菜单) / F(按钮权限)
 - 接口级权限控制：通过 `@PreAuthorize("hasAuthority('xxx')")` 实现
 
+### 实现要点
+
+- **Mapper**：自定义 SQL 统一写在 `resources/mapper/*.xml`，与 `application.yml` 中 `mapper-locations: classpath*:mapper/**/*.xml` 对应；基础 CRUD 使用 MyBatis-Plus `BaseMapper`。
+- **自动填充**：`createTime`、`updateTime`、`deleted` 由 `label-common` 的 `MetaObjectHandler` 在插入/更新时自动填充，Service 层无需手动赋值。
+- **日志**：Service 层对新增/修改/删除等关键操作使用 `@Slf4j` 记录 INFO 日志，便于排查与审计。
+- **初始化数据**：`backend/sql/init.sql` 包含建表与完整初始化数据（用户、角色、菜单及关联），脚本末尾有结束标记便于确认未截断。
+
 ### API 接口
 
 | 模块 | 接口 | 说明 |
 |------|------|------|
 | 认证 | POST /auth/login | 登录获取 JWT Token |
-| 认证 | GET /auth/info | 获取当前用户信息 |
-| 用户 | GET /system/user/page | 分页查询用户（参数：current, size） |
+| 认证 | GET /auth/info | 获取当前用户信息（需登录） |
+| 用户 | GET /system/user/page | 分页查询用户（参数：current, size, username, status） |
 | 用户 | POST /system/user | 新增用户 |
 | 用户 | PUT /system/user | 修改用户 |
 | 用户 | PUT /system/user/{id}/resetPassword | 重置密码（查询参数：newPassword） |
 | 用户 | DELETE /system/user/{id} | 删除用户 |
-| 角色 | GET /system/role/page | 分页查询角色 |
+| 角色 | GET /system/role/page | 分页查询角色（参数：current, size, roleName） |
+| 角色 | GET /system/role/list | 查询所有角色（下拉等场景） |
+| 角色 | GET /system/role/{id} | 获取角色详情 |
 | 角色 | POST /system/role | 新增角色 |
 | 角色 | PUT /system/role | 修改角色 |
 | 角色 | DELETE /system/role/{id} | 删除角色 |
 | 菜单 | GET /system/menu/tree | 查询菜单树 |
+| 菜单 | GET /system/menu/list | 查询所有菜单 |
+| 菜单 | GET /system/menu/{id} | 获取菜单详情 |
+| 菜单 | GET /system/menu/role/{roleId} | 根据角色ID查询菜单ID列表 |
 | 菜单 | POST /system/menu | 新增菜单 |
 | 菜单 | PUT /system/menu | 修改菜单 |
 | 菜单 | DELETE /system/menu/{id} | 删除菜单 |
+
+除登录外，上述接口均需在 Header 中携带 `Authorization: Bearer <token>`；角色/用户/菜单的增删改查均受 `@PreAuthorize` 权限控制（如 system:role:query、system:menu:add 等）。
+
+### 单元测试
+
+项目在各模块下提供 `src/test` 目录，满足工程细节与规范要求：
+
+| 模块 | 测试目录 | 说明 |
+|------|----------|------|
+| label-common | `src/test/java/com/cqjtjc/common/` | 通用组件：`RTest`、`PageResultTest` |
+| label-system | `src/test/java/com/cqjtjc/system/` | 业务层：如 `SysUserServiceImplTest`（Mock Mapper/Encoder） |
+| label-admin | `src/test/java/com/cqjtjc/` | 启动：`LabelApplicationTests`（上下文加载，测试 profile 使用 H2 内存库） |
+
+运行全部单元测试（需安装 Maven）：
+
+```bash
+cd backend
+mvn test
+```
+
+按模块运行：`mvn test -pl label-common`、`mvn test -pl label-system`、`mvn test -pl label-admin`。  
+label-admin 的上下文测试使用 `application-test.yml` + H2，无需启动 MySQL。
 
 ---
 

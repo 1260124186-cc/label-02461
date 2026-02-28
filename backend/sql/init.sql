@@ -96,7 +96,7 @@ CREATE TABLE `sys_role_menu` (
 INSERT INTO `sys_user` (`id`, `username`, `password`, `nickname`, `status`) VALUES
 (1, 'admin', '$2a$10$1.Ag0D/kUg.YR8PxggBQ7ePM.mCmsFp0SaSJrLY.jhmHW3Pq8pZjK', '超级管理员', 1);
 
--- 角色
+-- 角色（共 2 条）
 INSERT INTO `sys_role` (`id`, `role_name`, `role_key`, `sort`, `status`, `remark`) VALUES
 (1, '超级管理员', 'admin', 1, 1, '拥有所有权限'),
 (2, '普通用户', 'user', 2, 1, '普通用户角色');
@@ -137,3 +137,7 @@ INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES
 -- 普通用户角色只有查看权限
 INSERT INTO `sys_role_menu` (`role_id`, `menu_id`) VALUES
 (2, 1), (2, 100), (2, 1001), (2, 101), (2, 1011), (2, 102), (2, 1021);
+
+-- =============================================
+-- 初始化脚本结束（以上为完整初始化数据）
+-- =============================================

@@ -1,4 +1,4 @@
-package com.cqjtjc.system.domain.dto;
+package com.cqjtjc.system.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

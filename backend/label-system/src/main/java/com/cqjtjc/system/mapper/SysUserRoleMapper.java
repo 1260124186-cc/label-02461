@@ -1,14 +1,13 @@
 package com.cqjtjc.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.cqjtjc.system.domain.entity.SysUserRole;
-import org.apache.ibatis.annotations.Delete;
+import com.cqjtjc.system.entity.SysUserRole;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
 
-    @Delete("DELETE FROM sys_user_role WHERE user_id = #{userId}")
+    /** 按用户ID删除关联，SQL 见 SysUserRoleMapper.xml */
     int deleteByUserId(@Param("userId") Long userId);
 }

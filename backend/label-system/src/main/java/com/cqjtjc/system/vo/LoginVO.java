@@ -1,4 +1,4 @@
-package com.cqjtjc.system.domain.vo;
+package com.cqjtjc.system.vo;
 
 import lombok.Data;
 

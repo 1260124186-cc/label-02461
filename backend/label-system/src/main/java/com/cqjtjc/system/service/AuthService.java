@@ -1,7 +1,7 @@
 package com.cqjtjc.system.service;
 
-import com.cqjtjc.system.domain.dto.LoginDTO;
-import com.cqjtjc.system.domain.vo.LoginVO;
+import com.cqjtjc.system.dto.LoginDTO;
+import com.cqjtjc.system.vo.LoginVO;
 
 public interface AuthService {
 

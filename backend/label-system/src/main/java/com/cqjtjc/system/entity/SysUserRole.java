@@ -1,4 +1,4 @@
-package com.cqjtjc.system.domain.entity;
+package com.cqjtjc.system.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;

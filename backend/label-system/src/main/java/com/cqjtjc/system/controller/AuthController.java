@@ -1,8 +1,8 @@
 package com.cqjtjc.system.controller;
 
 import com.cqjtjc.common.result.R;
-import com.cqjtjc.system.domain.dto.LoginDTO;
-import com.cqjtjc.system.domain.vo.LoginVO;
+import com.cqjtjc.system.dto.LoginDTO;
+import com.cqjtjc.system.vo.LoginVO;
 import com.cqjtjc.system.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

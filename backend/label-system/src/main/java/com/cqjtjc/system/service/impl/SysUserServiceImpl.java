@@ -4,22 +4,23 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cqjtjc.common.exception.BusinessException;
-import com.cqjtjc.system.domain.dto.SysUserDTO;
-import com.cqjtjc.system.domain.entity.SysUser;
-import com.cqjtjc.system.domain.entity.SysUserRole;
+import com.cqjtjc.system.dto.SysUserDTO;
+import com.cqjtjc.system.entity.SysUser;
+import com.cqjtjc.system.entity.SysUserRole;
 import com.cqjtjc.system.mapper.SysUserMapper;
 import com.cqjtjc.system.mapper.SysUserRoleMapper;
 import com.cqjtjc.system.service.SysUserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
@@ -58,23 +59,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
         user.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
-        LocalDateTime now = LocalDateTime.now();
-        user.setCreateTime(now);
-        user.setUpdateTime(now);
-        user.setDeleted(0);
         this.save(user);
 
         Long userId = user.getId();
-        if (userId == null) {
-            SysUser saved = getByUsername(dto.getUsername());
-            if (saved != null) {
-                userId = saved.getId();
-            }
-        }
-        if (userId != null) {
-            saveUserRoles(userId, dto.getRoleIds());
-        }
-        return userId != null ? userId : user.getId();
+        saveUserRoles(userId, dto.getRoleIds());
+        log.info("新增用户成功, username={}, userId={}", dto.getUsername(), userId);
+        return userId;
     }
 
     @Override
@@ -94,6 +84,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 更新用户角色
         userRoleMapper.deleteByUserId(user.getId());
         saveUserRoles(user.getId(), dto.getRoleIds());
+        log.info("修改用户成功, userId={}, username={}", user.getId(), user.getUsername());
     }
 
     @Override
@@ -101,6 +92,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public void deleteUser(Long id) {
         this.removeById(id);
         userRoleMapper.deleteByUserId(id);
+        log.info("删除用户成功, userId={}", id);
     }
 
     @Override
@@ -111,6 +103,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         this.updateById(user);
+        log.info("重置密码成功, userId={}, username={}", id, user.getUsername());
     }
 
     private void saveUserRoles(Long userId, List<Long> roleIds) {

@@ -1,4 +1,4 @@
-package com.cqjtjc.system.domain.dto;
+package com.cqjtjc.system.dto;
 
 import com.cqjtjc.common.validation.AddGroup;
 import com.cqjtjc.common.validation.UpdateGroup;

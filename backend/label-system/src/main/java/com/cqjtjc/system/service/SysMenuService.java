@@ -1,9 +1,9 @@
 package com.cqjtjc.system.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.cqjtjc.system.domain.dto.SysMenuDTO;
-import com.cqjtjc.system.domain.entity.SysMenu;
-import com.cqjtjc.system.domain.vo.MenuTreeVO;
+import com.cqjtjc.system.dto.SysMenuDTO;
+import com.cqjtjc.system.entity.SysMenu;
+import com.cqjtjc.system.vo.MenuTreeVO;
 
 import java.util.List;
 
