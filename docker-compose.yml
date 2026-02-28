@@ -40,6 +40,8 @@ services:
       DB_NAME: label_rbac
       DB_USER: root
       DB_PASSWORD: root
+      # 生产环境务必覆盖为强随机密钥，例如：openssl rand -base64 32
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production-min-32-bits!!}
     depends_on:
       mysql:
         condition: service_healthy

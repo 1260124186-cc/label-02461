@@ -25,6 +25,13 @@ public class SysRoleController {
 
     private final SysRoleService roleService;
 
+    /**
+     * 分页查询角色。
+     *
+     * @param current 页码（默认 1）
+     * @param size    每页条数（默认 10）
+     * @param roleName 可选，按角色名称模糊查询
+     */
     @Operation(summary = "分页查询角色")
     @GetMapping("/page")
     @PreAuthorize("hasAuthority('system:role:list')")
@@ -37,6 +44,9 @@ public class SysRoleController {
         return R.ok(new PageResult<>(page.getTotal(), page.getCurrent(), page.getSize(), page.getPages(), records));
     }
 
+    /**
+     * 查询所有角色（常用于下拉框等场景）。
+     */
     @Operation(summary = "查询所有角色")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('system:role:query')")
@@ -44,6 +54,9 @@ public class SysRoleController {
         return R.ok(roleService.list());
     }
 
+    /**
+     * 获取角色详情。
+     */
     @Operation(summary = "获取角色详情")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('system:role:query')")
@@ -51,6 +64,13 @@ public class SysRoleController {
         return R.ok(roleService.getById(id));
     }
 
+    /**
+     * 新增角色并绑定菜单/权限点。
+     *
+     * <p>{@code menuIds} 对应 {@code sys_menu.id}，用于将角色与菜单/按钮权限建立关联。</p>
+     *
+     * @return 新增角色 ID
+     */
     @Operation(summary = "新增角色")
     @PostMapping
     @PreAuthorize("hasAuthority('system:role:add')")
@@ -59,6 +79,9 @@ public class SysRoleController {
         return R.ok(id);
     }
 
+    /**
+     * 修改角色信息并重建角色-菜单关联（先删后插）。
+     */
     @Operation(summary = "修改角色")
     @PutMapping
     @PreAuthorize("hasAuthority('system:role:edit')")
@@ -67,6 +90,9 @@ public class SysRoleController {
         return R.ok();
     }
 
+    /**
+     * 删除角色并清理角色-菜单关联。
+     */
     @Operation(summary = "删除角色")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('system:role:delete')")

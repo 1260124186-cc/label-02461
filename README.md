@@ -20,14 +20,31 @@ docker-compose down -v
 
 启动完成后访问：
 - API 服务：http://localhost:8080
-- Swagger 文档：http://localhost:8080/swagger-ui.html
+
+## API 文档（Swagger / OpenAPI）
+
+- Swagger UI：`http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON：`http://localhost:8080/v3/api-docs`
+- 详细接口文档（含鉴权、权限点、参数与示例）：见 [`docs/API.md`](docs/API.md)
+
+> 说明：除 `POST /auth/login` 外，其它接口默认需要 `Authorization: Bearer <token>`；并且会根据 `@PreAuthorize("hasAuthority('xxx')")` 做权限校验（对应 `sys_menu.permission`）。
 
 ## Services
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | backend | 8080 | Spring Boot 后端 API 服务 |
-| mysql | 3306 | MySQL 8.0 数据库 |
+| mysql | 3306 | MySQL 8.0 数据库（容器内 3306；宿主机映射 13306，本机连接请用 `localhost:13306`） |
+
+### 环境变量（后端）
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `JWT_SECRET` | 是 | JWT 签名密钥，建议 ≥32 字符的强随机串。生成示例：`openssl rand -base64 32`。生产环境务必单独配置，勿使用默认值。 |
+| `JWT_EXPIRATION` | 否 | Token 有效期（毫秒），默认 86400000（24 小时） |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | 否 | 数据库连接，见 `application.yml` 默认值 |
+
+使用 Docker Compose 时，可在项目根目录设置后再启动：`export JWT_SECRET=$(openssl rand -base64 32)` 或写入 `.env` 后 `docker-compose up -d`。
 
 ## 测试账号
 
@@ -95,7 +112,8 @@ docker-compose down -v
     │       │   ├── vo/              # 响应/视图（LoginVO、MenuTreeVO）
     │       │   ├── mapper/          # MyBatis Mapper 接口
     │       │   ├── security/        # JWT 过滤、Security 配置
-    │       │   └── service/         # 业务接口与实现
+    │       │   ├── service/         # 业务接口与实现
+    │       │   └── util/            # 业务工具（如 PasswordStrengthValidator）
     │       └── resources/
     │           └── mapper/          # Mapper XML，自定义 SQL 统一在此（mapper-locations 扫描）
     │               ├── SysUserMapper.xml
@@ -119,11 +137,24 @@ docker-compose down -v
 - 菜单类型：M(目录) / C(菜单) / F(按钮权限)
 - 接口级权限控制：通过 `@PreAuthorize("hasAuthority('xxx')")` 实现
 
+### 核心功能使用示例（推荐按此顺序操作）
+
+更完整的参数与响应示例见 [`docs/API.md`](docs/API.md)。下面给出一个最常用的 RBAC 配置闭环：
+
+1) **登录拿 Token**：`POST /auth/login` → 得到 `token`
+2) **创建菜单/权限点**（可选）：`POST /system/menu`
+   - 按钮权限使用 `menuType=F` 且填写 `permission`（例如 `system:user:add`）
+3) **创建角色并绑定权限点**：`POST /system/role`（`menuIds` 传上一步菜单/权限的 ID 列表）
+4) **创建用户并分配角色**：`POST /system/user`（`roleIds` 传角色 ID 列表）
+5) **验证权限生效**：用新用户登录后访问受限接口，预期 403 或 200（取决于是否授予对应 `permission`）
+
 ### 实现要点
 
-- **Mapper**：自定义 SQL 统一写在 `resources/mapper/*.xml`，与 `application.yml` 中 `mapper-locations: classpath*:mapper/**/*.xml` 对应；基础 CRUD 使用 MyBatis-Plus `BaseMapper`。
+- **Mapper**：自定义 SQL 统一写在 `resources/mapper/*.xml`，与 `application.yml` 中 `mapper-locations: classpath*:mapper/**/*.xml` 对应；基础 CRUD 使用 MyBatis-Plus `BaseMapper`；用户-角色、角色-菜单关联采用批量插入（`insertBatch`）提升写入效率。
 - **自动填充**：`createTime`、`updateTime`、`deleted` 由 `label-common` 的 `MetaObjectHandler` 在插入/更新时自动填充，Service 层无需手动赋值。
 - **日志**：Service 层对新增/修改/删除等关键操作使用 `@Slf4j` 记录 INFO 日志，便于排查与审计。
+- **密码与安全**：新增用户必须设置密码（无默认弱密码）；密码强度校验：长度 8~128 位，须包含字母和数字（`PasswordStrengthValidator`），重置密码同样适用；JWT 密钥通过环境变量 `JWT_SECRET` 配置，禁止在配置文件中硬编码。
+- **入参校验**：用户 DTO 使用 Jakarta Validation 做长度与格式校验（用户名 2~50、密码 8~128、昵称/邮箱/手机长度及邮箱格式等），新增/修改分组（AddGroup / UpdateGroup）区分必填与可选。
 - **初始化数据**：`backend/sql/init.sql` 包含建表与完整初始化数据（用户、角色、菜单及关联），脚本末尾有结束标记便于确认未截断。
 
 ### API 接口
@@ -133,9 +164,10 @@ docker-compose down -v
 | 认证 | POST /auth/login | 登录获取 JWT Token |
 | 认证 | GET /auth/info | 获取当前用户信息（需登录） |
 | 用户 | GET /system/user/page | 分页查询用户（参数：current, size, username, status） |
-| 用户 | POST /system/user | 新增用户 |
+| 用户 | GET /system/user/{id} | 获取用户详情（需登录） |
+| 用户 | POST /system/user | 新增用户（请求体需含 password，且满足长度与强度校验） |
 | 用户 | PUT /system/user | 修改用户 |
-| 用户 | PUT /system/user/{id}/resetPassword | 重置密码（查询参数：newPassword） |
+| 用户 | PUT /system/user/{id}/resetPassword | 重置密码（查询参数：newPassword，须满足密码强度） |
 | 用户 | DELETE /system/user/{id} | 删除用户 |
 | 角色 | GET /system/role/page | 分页查询角色（参数：current, size, roleName） |
 | 角色 | GET /system/role/list | 查询所有角色（下拉等场景） |
@@ -170,7 +202,7 @@ cd backend
 mvn test
 ```
 
-按模块运行：`mvn test -pl label-common`、`mvn test -pl label-system`、`mvn test -pl label-admin`。  
+按模块运行：`mvn test -pl label-common`、`mvn test -pl label-system`、`mvn test -pl label-admin`。
 label-admin 的上下文测试使用 `application-test.yml` + H2，无需启动 MySQL。
 
 ---
@@ -284,11 +316,11 @@ curl -X DELETE http://localhost:8080/system/role/<id> \
 curl "http://localhost:8080/system/user/page?current=1&size=10" \
   -H "Authorization: Bearer <token>"
 
-# 新增用户
+# 新增用户（密码须 8 位以上且含字母与数字）
 curl -X POST http://localhost:8080/system/user \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"test123","nickname":"测试用户","roleIds":[]}'
+  -d '{"username":"testuser","password":"test1234","nickname":"测试用户","roleIds":[]}'
 
 # 修改用户（使用新增返回的 id）
 curl -X PUT http://localhost:8080/system/user \
@@ -296,8 +328,8 @@ curl -X PUT http://localhost:8080/system/user \
   -H "Content-Type: application/json" \
   -d '{"id":<id>,"nickname":"测试用户-改"}'
 
-# 重置密码（路径传用户 id，查询参数传新密码）
-curl -X PUT "http://localhost:8080/system/user/<id>/resetPassword?newPassword=newpass123" \
+# 重置密码（路径传用户 id，查询参数传新密码；新密码须满足强度：8~128 位且含字母与数字）
+curl -X PUT "http://localhost:8080/system/user/<id>/resetPassword?newPassword=Newpass123" \
   -H "Authorization: Bearer <token>"
 
 # 删除用户

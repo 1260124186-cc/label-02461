@@ -3,6 +3,9 @@ package com.cqjtjc.system.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cqjtjc.common.exception.BusinessException;
+import com.cqjtjc.common.exception.ErrorCode;
+import com.cqjtjc.common.exception.ErrorCode;
+import com.cqjtjc.common.exception.ErrorCode;
 import com.cqjtjc.system.dto.SysMenuDTO;
 import com.cqjtjc.system.entity.SysMenu;
 import com.cqjtjc.system.vo.MenuTreeVO;
@@ -26,6 +29,11 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     private final SysRoleMenuMapper roleMenuMapper;
 
     @Override
+    /**
+     * 获取完整菜单树（仅返回启用状态的菜单）。
+     *
+     * <p>根节点约定为 {@code parentId=0}；返回结构为 {@link MenuTreeVO}，便于前端直接渲染。</p>
+     */
     public List<MenuTreeVO> getMenuTree() {
         List<SysMenu> menus = this.list(new LambdaQueryWrapper<SysMenu>()
                 .eq(SysMenu::getStatus, 1)
@@ -34,23 +42,41 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     @Override
+    /**
+     * 根据用户 ID 获取其可访问的菜单树。
+     *
+     * <p>具体可见菜单由 Mapper XML 的联表查询决定（角色-菜单授权）。</p>
+     */
     public List<MenuTreeVO> getMenuTreeByUserId(Long userId) {
         List<SysMenu> menus = baseMapper.selectMenusByUserId(userId);
         return buildTree(menus, 0L);
     }
 
     @Override
+    /**
+     * 查询用户拥有的权限点（permission 标识集合）。
+     *
+     * <p>该列表直接用于 Spring Security 的 {@code hasAuthority('xxx')} 判定。</p>
+     */
     public List<String> getPermissionsByUserId(Long userId) {
         return baseMapper.selectPermissionsByUserId(userId);
     }
 
     @Override
+    /**
+     * 根据角色 ID 查询其授权的菜单/权限点 ID 列表（用于授权回显）。
+     */
     public List<Long> getMenuIdsByRoleId(Long roleId) {
         List<SysMenu> menus = baseMapper.selectMenusByRoleId(roleId);
         return menus.stream().map(SysMenu::getId).collect(Collectors.toList());
     }
 
     @Override
+    /**
+     * 新增菜单/权限点。
+     *
+     * <p>若未传 {@code parentId}，默认挂到根节点（0）。</p>
+     */
     public Long addMenu(SysMenuDTO dto) {
         SysMenu menu = new SysMenu();
         BeanUtils.copyProperties(dto, menu);
@@ -63,10 +89,15 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     @Override
+    /**
+     * 修改菜单。
+     *
+     * @throws BusinessException 菜单不存在
+     */
     public void updateMenu(SysMenuDTO dto) {
         SysMenu menu = this.getById(dto.getId());
         if (menu == null) {
-            throw new BusinessException("菜单不存在");
+            throw new BusinessException(ErrorCode.MENU_NOT_FOUND);
         }
         BeanUtils.copyProperties(dto, menu);
         this.updateById(menu);
@@ -74,12 +105,19 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
     }
 
     @Override
+    /**
+     * 删除菜单。
+     *
+     * <p>为保持树结构一致性：若存在子菜单，则拒绝删除。</p>
+     *
+     * @throws BusinessException 存在子菜单不允许删除
+     */
     public void deleteMenu(Long id) {
         // 检查是否有子菜单
         long count = this.count(new LambdaQueryWrapper<SysMenu>()
                 .eq(SysMenu::getParentId, id));
         if (count > 0) {
-            throw new BusinessException("存在子菜单，不允许删除");
+            throw new BusinessException(ErrorCode.MENU_HAS_CHILDREN);
         }
         this.removeById(id);
         log.info("删除菜单成功, menuId={}", id);

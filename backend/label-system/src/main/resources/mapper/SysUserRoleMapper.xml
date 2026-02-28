@@ -6,4 +6,12 @@
     <delete id="deleteByUserId">
         DELETE FROM sys_user_role WHERE user_id = #{userId}
     </delete>
+
+    <!-- 批量插入用户-角色关联 -->
+    <insert id="insertBatch">
+        INSERT INTO sys_user_role (user_id, role_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.roleId})
+        </foreach>
+    </insert>
 </mapper>

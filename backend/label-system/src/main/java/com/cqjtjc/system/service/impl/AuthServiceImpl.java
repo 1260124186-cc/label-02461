@@ -1,6 +1,7 @@
 package com.cqjtjc.system.service.impl;
 
 import com.cqjtjc.common.exception.BusinessException;
+import com.cqjtjc.common.exception.ErrorCode;
 import com.cqjtjc.common.utils.JwtUtils;
 import com.cqjtjc.system.dto.LoginDTO;
 import com.cqjtjc.system.entity.SysRole;
@@ -36,6 +37,17 @@ public class AuthServiceImpl implements AuthService {
     private final SysMenuService menuService;
 
     @Override
+    /**
+     * 登录并签发 JWT。
+     *
+     * <p>流程说明：</p>
+     * <ul>
+     *   <li>先交给 {@link AuthenticationManager} 做账号/密码认证（失败会抛出 401）。</li>
+     *   <li>再校验用户是否存在/是否禁用（业务异常）。</li>
+     *   <li>签发 JWT：在 claims 中写入 {@code userId} 便于后续鉴权/审计扩展。</li>
+     *   <li>返回的用户信息会附带角色标识（roleKey）与权限点（permission）列表，供前端初始化使用。</li>
+     * </ul>
+     */
     public LoginVO login(LoginDTO dto) {
         // 认证
         Authentication authentication = authenticationManager.authenticate(
@@ -45,10 +57,10 @@ public class AuthServiceImpl implements AuthService {
         // 获取用户信息
         SysUser user = userService.getByUsername(dto.getUsername());
         if (user == null) {
-            throw new BusinessException("用户不存在");
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         if (user.getStatus() != 1) {
-            throw new BusinessException("用户已被禁用");
+            throw new BusinessException(ErrorCode.USER_DISABLED);
         }
 
         // 生成 token
@@ -65,15 +77,22 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    /**
+     * 获取当前登录用户信息。
+     *
+     * <p>从 {@link SecurityContextHolder} 获取认证信息，并基于用户名加载用户、角色、权限点。</p>
+     *
+     * @throws BusinessException 未登录（401）或用户不存在等业务异常
+     */
     public LoginVO.UserInfoVO getCurrentUserInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new BusinessException(401, "未登录");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         String username = authentication.getName();
         SysUser user = userService.getByUsername(username);
         if (user == null) {
-            throw new BusinessException("用户不存在");
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         log.debug("获取当前用户信息, username={}", username);
         return buildUserInfo(user);

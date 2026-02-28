@@ -20,6 +20,7 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
+# 测试环境使用固定密钥，仅用于单测/集成测试
 jwt:
-  secret: cqjtjc-label-rbac-secret-key-2024-must-be-256-bits
+  secret: ${JWT_SECRET:test-secret-key-for-unit-test-only-min-32-chars}
   expiration: 86400000

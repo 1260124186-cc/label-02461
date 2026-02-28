@@ -6,22 +6,38 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
 /**
- * JWT 工具类
+ * JWT 工具类。密钥通过环境变量 JWT_SECRET 注入，禁止硬编码。
  */
 @Component
 public class JwtUtils {
 
-    @Value("${jwt.secret:cqjtjc-label-rbac-secret-key-2024-must-be-256-bits}")
+    private static final int MIN_SECRET_LENGTH = 32; // HS256 建议至少 256 bits
+
+    @Value("${jwt.secret:}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")
     private long expiration;
+
+    @PostConstruct
+    private void validateSecret() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "jwt.secret 未配置。请设置环境变量 JWT_SECRET（建议 ≥32 字符），例如：openssl rand -base64 32");
+        }
+        if (secret.length() < MIN_SECRET_LENGTH) {
+            throw new IllegalStateException(
+                    "JWT_SECRET 长度不足，至少 " + MIN_SECRET_LENGTH + " 字符，当前 " + secret.length());
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

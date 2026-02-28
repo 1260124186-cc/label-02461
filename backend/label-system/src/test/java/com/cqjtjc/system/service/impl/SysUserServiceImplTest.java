@@ -88,6 +88,34 @@ class SysUserServiceImplTest {
     }
 
     @Test
+    void addUser_whenPasswordEmpty_throwsBusinessException() {
+        when(baseMapper.selectOne(any())).thenReturn(null);
+
+        SysUserDTO dto = new SysUserDTO();
+        dto.setUsername("newuser");
+        dto.setPassword("");
+        dto.setNickname("新用户");
+        dto.setRoleIds(Collections.emptyList());
+
+        assertThrows(BusinessException.class, () -> userService.addUser(dto));
+        verify(baseMapper, never()).insert(any());
+    }
+
+    @Test
+    void addUser_whenPasswordTooWeak_throwsBusinessException() {
+        when(baseMapper.selectOne(any())).thenReturn(null);
+
+        SysUserDTO dto = new SysUserDTO();
+        dto.setUsername("newuser");
+        dto.setPassword("12345678"); // 仅数字，无字母
+        dto.setNickname("新用户");
+        dto.setRoleIds(Collections.emptyList());
+
+        assertThrows(BusinessException.class, () -> userService.addUser(dto));
+        verify(baseMapper, never()).insert(any());
+    }
+
+    @Test
     void addUser_whenUsernameNotExists_savesAndReturnsId() {
         when(baseMapper.selectOne(any())).thenReturn(null);
         when(baseMapper.insert(any(SysUser.class))).thenAnswer(inv -> {
@@ -99,7 +127,7 @@ class SysUserServiceImplTest {
 
         SysUserDTO dto = new SysUserDTO();
         dto.setUsername("newuser");
-        dto.setPassword("pass123");
+        dto.setPassword("Pass1234"); // 满足强度：8 位，含字母和数字
         dto.setNickname("新用户");
         dto.setRoleIds(Collections.emptyList());
 
@@ -120,7 +148,15 @@ class SysUserServiceImplTest {
     void resetPassword_whenUserNotExists_throwsBusinessException() {
         when(baseMapper.selectById(999L)).thenReturn(null);
 
-        assertThrows(BusinessException.class, () -> userService.resetPassword(999L, "newPass"));
+        assertThrows(BusinessException.class, () -> userService.resetPassword(999L, "NewPass1"));
+        verify(baseMapper, never()).updateById(any());
+    }
+
+    @Test
+    void resetPassword_whenPasswordTooWeak_throwsBusinessException() {
+        when(baseMapper.selectById(1L)).thenReturn(existingUser);
+
+        assertThrows(BusinessException.class, () -> userService.resetPassword(1L, "short"));
         verify(baseMapper, never()).updateById(any());
     }
 
@@ -128,9 +164,9 @@ class SysUserServiceImplTest {
     void resetPassword_whenUserExists_updatesPassword() {
         when(baseMapper.selectById(1L)).thenReturn(existingUser);
         when(baseMapper.updateById(any(SysUser.class))).thenReturn(1);
-        when(passwordEncoder.encode("newPass")).thenReturn("encodedNew");
+        when(passwordEncoder.encode("NewPass1")).thenReturn("encodedNew"); // 满足强度
 
-        userService.resetPassword(1L, "newPass");
+        userService.resetPassword(1L, "NewPass1");
 
         ArgumentCaptor<SysUser> userCaptor = ArgumentCaptor.forClass(SysUser.class);
         verify(baseMapper).updateById(userCaptor.capture());

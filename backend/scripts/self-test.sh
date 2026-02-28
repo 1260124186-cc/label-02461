@@ -17,8 +17,14 @@ ROLE_KEY="test_role_$TIMESTAMP"
 TESTUSER_NAME="testuser_$TIMESTAMP"
 
 # 从 JSON 响应中解析 data 字段的数值（用于新增接口返回的 id）
+# 支持 "data":123 或含换行/空格的 JSON；兼容 "data":"123" 字符串形式
 parse_data_id() {
-  echo "$1" | grep -oE '"data":[0-9]+' | sed 's/"data"://'
+  local body
+  body=$(echo "$1" | tr -d '\n' | tr -d ' ')
+  local id
+  id=$(echo "$body" | grep -oE '"data":[0-9]+' | sed 's/"data"://')
+  [ -n "$id" ] && echo "$id" && return
+  echo "$body" | grep -oE '"data":"[0-9]+"' | sed 's/"data":"\([0-9]*\)"/\1/'
 }
 
 check_200() {
@@ -130,7 +136,7 @@ echo -n "[12] POST /system/user (新增用户)... "
 ADD_USER_RESP=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/system/user" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json; charset=utf-8" \
-  -d "{\"username\":\"$TESTUSER_NAME\",\"password\":\"test123\",\"nickname\":\"TestUser\",\"roleIds\":[]}")
+  -d "{\"username\":\"$TESTUSER_NAME\",\"password\":\"test1234\",\"nickname\":\"TestUser\",\"roleIds\":[]}")
 ADD_USER_CODE=$(echo "$ADD_USER_RESP" | tail -n1)
 ADD_USER_BODY=$(echo "$ADD_USER_RESP" | sed '$d')
 if [ "$ADD_USER_CODE" != "200" ]; then
@@ -149,8 +155,8 @@ CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$BASE_URL/system/user" \
   -d "{\"id\":$USER_ID,\"nickname\":\"TestUser-Updated\"}")
 check_200 "$CODE" "user update"
 
-echo -n "[14] PUT /system/user/$USER_ID/resetPassword?newPassword=newpass123... "
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$BASE_URL/system/user/$USER_ID/resetPassword?newPassword=newpass123" \
+echo -n "[14] PUT /system/user/$USER_ID/resetPassword?newPassword=Newpass123... "
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$BASE_URL/system/user/$USER_ID/resetPassword?newPassword=Newpass123" \
   -H "Authorization: Bearer $TOKEN")
 check_200 "$CODE" "resetPassword"
 
@@ -158,7 +164,7 @@ check_200 "$CODE" "resetPassword"
 echo -n "[15] 权限验证：测试用户登录后 GET /system/user/page 预期 403... "
 TESTUSER_LOGIN=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json; charset=utf-8" \
-  -d "{\"username\":\"$TESTUSER_NAME\",\"password\":\"newpass123\"}")
+  -d "{\"username\":\"$TESTUSER_NAME\",\"password\":\"Newpass123\"}")
 TESTUSER_CODE=$(echo "$TESTUSER_LOGIN" | tail -n1)
 TESTUSER_BODY=$(echo "$TESTUSER_LOGIN" | sed '$d')
 if [ "$TESTUSER_CODE" != "200" ]; then
