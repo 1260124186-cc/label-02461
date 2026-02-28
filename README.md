@@ -23,7 +23,6 @@ docker-compose down -v
 
 ## API 文档（Swagger / OpenAPI）
 
-- Swagger UI：`http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON：`http://localhost:8080/v3/api-docs`
 - 详细接口文档（含鉴权、权限点、参数与示例）：见 [`docs/API.md`](docs/API.md)
 
