@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.cqjtjc</groupId>
+        <artifactId>label</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>label-system</artifactId>
+    <packaging>jar</packaging>
+    <name>label-system</name>
+    <description>系统管理模块 - RBAC权限</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.cqjtjc</groupId>
+            <artifactId>label-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>
