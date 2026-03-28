@@ -5,6 +5,7 @@ import com.cqjtjc.common.result.PageResult;
 import com.cqjtjc.common.result.R;
 import com.cqjtjc.common.validation.AddGroup;
 import com.cqjtjc.common.validation.UpdateGroup;
+import com.cqjtjc.system.dto.ResetPasswordDTO;
 import com.cqjtjc.system.dto.SysUserDTO;
 import com.cqjtjc.system.entity.SysUser;
 import com.cqjtjc.system.service.SysUserService;
@@ -112,8 +113,8 @@ public class SysUserController {
     @Operation(summary = "重置密码")
     @PutMapping("/{id}/resetPassword")
     @PreAuthorize("hasAuthority('system:user:resetPwd')")
-    public R<Void> resetPassword(@PathVariable Long id, @RequestParam String newPassword) {
-        userService.resetPassword(id, newPassword);
+    public R<Void> resetPassword(@PathVariable Long id, @Validated @RequestBody ResetPasswordDTO dto) {
+        userService.resetPassword(id, dto.getNewPassword());
         return R.ok();
     }
 }

@@ -261,13 +261,17 @@ curl -X POST "http://localhost:8080/system/user" \
 - **接口**：`PUT /system/user/{id}/resetPassword`
 - **鉴权**：是
 - **权限点**：`system:user:resetPwd`
-- **Query 参数**：`newPassword`（同样要求强密码）
+- **请求体**：`ResetPasswordDTO`（同样要求强密码）
 
 示例：
 
 ```bash
-curl -X PUT "http://localhost:8080/system/user/1/resetPassword?newPassword=NewPass1" \
-  -H "Authorization: Bearer <token>"
+curl -X PUT "http://localhost:8080/system/user/1/resetPassword" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "newPassword":"NewPass1"
+  }'
 ```
 
 ## 7. 角色模块（SysRole）
