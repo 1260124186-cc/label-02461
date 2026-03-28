@@ -166,7 +166,7 @@ docker-compose down -v
 | 用户 | GET /system/user/{id} | 获取用户详情（需登录） |
 | 用户 | POST /system/user | 新增用户（请求体需含 password，且满足长度与强度校验） |
 | 用户 | PUT /system/user | 修改用户 |
-| 用户 | PUT /system/user/{id}/resetPassword | 重置密码（查询参数：newPassword，须满足密码强度） |
+| 用户 | PUT /system/user/{id}/resetPassword | 重置密码（请求体：{\"newPassword\": \"xxx\"}，须满足密码强度） |
 | 用户 | DELETE /system/user/{id} | 删除用户 |
 | 角色 | GET /system/role/page | 分页查询角色（参数：current, size, roleName） |
 | 角色 | GET /system/role/list | 查询所有角色（下拉等场景） |
@@ -327,9 +327,11 @@ curl -X PUT http://localhost:8080/system/user \
   -H "Content-Type: application/json" \
   -d '{"id":<id>,"nickname":"测试用户-改"}'
 
-# 重置密码（路径传用户 id，查询参数传新密码；新密码须满足强度：8~128 位且含字母与数字）
-curl -X PUT "http://localhost:8080/system/user/<id>/resetPassword?newPassword=Newpass123" \
-  -H "Authorization: Bearer <token>"
+# 重置密码（路径传用户 id，请求体传新密码；新密码须满足强度：8~128 位且含字母与数字）
+curl -X PUT "http://localhost:8080/system/user/<id>/resetPassword" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"newPassword":"NewPass1234"}'
 
 # 删除用户
 curl -X DELETE http://localhost:8080/system/user/<id> \
