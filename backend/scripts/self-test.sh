@@ -155,9 +155,11 @@ CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$BASE_URL/system/user" \
   -d "{\"id\":$USER_ID,\"nickname\":\"TestUser-Updated\"}")
 check_200 "$CODE" "user update"
 
-echo -n "[14] PUT /system/user/$USER_ID/resetPassword?newPassword=Newpass123... "
-CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$BASE_URL/system/user/$USER_ID/resetPassword?newPassword=Newpass123" \
-  -H "Authorization: Bearer $TOKEN")
+echo -n "[14] PUT /system/user/$USER_ID/resetPassword... "
+CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$BASE_URL/system/user/$USER_ID/resetPassword" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"newPassword":"Newpass123"}')
 check_200 "$CODE" "resetPassword"
 
 # ---------- 6. 权限验证：测试用户无 system:user:list，应返回 403 ----------
